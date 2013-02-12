@@ -804,8 +804,19 @@ Duna = Planet("Duna",Kerbol,
                radius=320000.0,
                SoI=47921949.0)
  
- 
-Celestials = [Kerbol,Kerbin,Mun,Minmus,Duna]
+
+Eeloo = Planet("Eeloo",Kerbol,
+               elements=[0,90118820000,
+                       0.26,
+                       6.15,
+                       50.0,
+                       260.0,
+                       3.14000010490417],
+                   mu=74410815000.0,
+                   radius=210000.0,
+                   SoI=119082940.0)
+                   
+Celestials = [Kerbol,Kerbin,Mun,Minmus,Duna,Eeloo]
 for celestial in Celestials:
     celestial.generatePaths()
     

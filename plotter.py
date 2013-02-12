@@ -25,23 +25,33 @@ from celestial import Kerbin
 import toolkit
 from mpl_toolkits.mplot3d import Axes3D
 
-class Orbit2D:
+
+class Orbit2D(object):
     ''' Rendering window that displays 2D orbit on reference body '''
     def __init__(self,ref=Kerbin):
         self.ref = ref
         self.figure = figure(figsize=(5,5))
+        self.figure.canvas.mpl_connect('close_event', self.close_event)
+
         self.axis = self.figure.gca(projection="rectilinear")#,aspect='equal')
         self.axis.set_aspect('equal')
-        #self.axis.set_autoscale_on(True) 
+
         self.objects = []
-        self.figure.canvas.manager.window.after(1000, self.update)
+        self.update_after = self.figure.canvas.manager.window.after(1000, self.update)
+        self.window = self.figure.canvas.manager.window # Reference to window, otherwise it's lost before close_event is called
 
         self.linspace = linspace(0,2*pi,360)
+    
+    def close_event(self,event):
+        ''' Destroy the timer so it doesn't cause an error on linux '''
+        self.window.after_cancel(self.update_after)
+        del self.window
+    
     def update(self):
         #print "UPDATE"
         if not fignum_exists(self.figure.number):
             return
-        self.figure.canvas.manager.window.after(1000, self.update)
+        self.update_after = self.figure.canvas.manager.window.after(1000, self.update)
         if len(self.objects) == 0:
             self.axis.clear()
             self.text = self.axis.text(0.5,0.5,"No objects tracked")
@@ -109,15 +119,22 @@ class Orbit3D:
     def __init__(self,ref=Kerbin):
         self.ref = ref
         self.figure = figure(figsize=(5,5))
+        self.figure.canvas.mpl_connect('close_event', self.close_event)
         self.axis = self.figure.gca(projection='3d')
         self.axis.set_aspect('equal')
         self.axis.set_axisbelow(True)
         self.figure.canvas.manager.window.after(1000, self.update)
+        self.window = self.figure.canvas.manager.window 
         self.objects = {}
         
         self.linspace = linspace(0,2*pi,360)
         self.sphere = None
         self.notrack = False
+    
+    def close_event(self,event):
+        ''' Destroy the timer so it doesn't cause an error on linux '''
+        self.window.after_cancel(self.update_after)
+        del self.window    
     
     def update(self):
         #print "UPDATE"
