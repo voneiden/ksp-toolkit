@@ -20,7 +20,7 @@
 """
 import time
 import scipy.optimize as so
-from pylab import figure, fignum_exists, Circle, linspace, pi, mgrid, sin, cos, zeros, cross, norm, ma, isnan
+from pylab import figure, fignum_exists, Circle, linspace, pi, mgrid, sin, cos, zeros, cross, norm, ma, isnan, arccos, norm, degrees
 from celestial import Kerbin
 import toolkit
 from mpl_toolkits.mplot3d import Axes3D
@@ -313,8 +313,21 @@ class PorkchopPlot:
                 lv1,lv2 = toolkit.lambert(dp,ap,dt,0,mu)
                 
                 c3 =  norm(lv1-dv) + norm(lv2-av)
-                if isnan(c3) or c3 > 2000:
+                if isnan(c3):
+                    phase = degrees(arccos(dp.dot(ap)/(norm(dp)*norm(ap))))
+                    print "NaN phase angle:",phase
+                    time.sleep(0.1)
                     c3 = 0
+                if c3 > 10000:
+                    c3 = 0
+                    
+                if c3 == 0:
+                    phase = degrees(arccos(dp.dot(ap)/(norm(dp)*norm(ap))))
+                    if phase > 160:
+                            
+                        print "NaN phase angle:",phase
+                        c3= 3000
+                        #time.sleep(0.1)
                 Z[arri][depi] = c3
                 print "v",Z[arri][depi] 
                 
