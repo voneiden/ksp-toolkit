@@ -49,7 +49,8 @@ class Database(object):
         self.refs = {
             "Kerbin":Kerbin,
             "Mun":Mun,
-            "Minmus":Minmus}
+            "Minmus":Minmus,
+            "Duna":Duna}
         self.UT = None
         self.UTt = None
 

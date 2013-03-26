@@ -65,6 +65,7 @@ class Celestial(object):
                     self.orbit = Orbit(self,self.ref,*kwargs["elements"])
                 if "state" in keys:
                     self.isFlying = True
+                    print "celestial",kwargs["state"]
                     self.orbit = Orbit(self,self.ref,*kwargs["state"])
                     
                 if "isFlying" in keys:
@@ -221,6 +222,9 @@ class Orbit(object):
             #elif self.e > 1:
             #    self.h = sqrt(-self.a*self.ref.mu*(self.e**2-1))
         else:
+            print "error"
+            print args
+            print "len",len(args)
             raise AttributeError("Unable to init"+str(args))
         if len(args) == 0:
             pass
@@ -765,6 +769,7 @@ class Moon(Planet):
  
 class Ship(Celestial):
     def __init__(self,name,ref,**kwargs):
+        self.info = {}
         if ref:
             Celestial.__init__(self,name,ref,depth=ref.depth+1,**kwargs)
         else:
@@ -804,7 +809,52 @@ Duna = Planet("Duna",Kerbol,
                radius=320000.0,
                SoI=47921949.0)
  
-
+ 
+ 
+Dres = Planet("Dres",Kerbol,
+              elements=[0,40839348203,
+                        0.144999995827675,
+                        5,
+                        280,
+                        90,
+                        3.14000010490417],
+                    mu=21484489000 ,
+                    radius=138000,
+                    SoI=32832840)
+ 
+Jool = Planet("Jool",Kerbol,
+              elements=[0,68773560320,
+                        0.0500000007450581,
+                        1.30400002002716,
+                        52,
+                        0,
+                        0.100000001490116],
+                    mu=2.82528e14,
+                    radius=6000000 ,
+                    SoI=2455985200 )
+ 
+Eve = Planet("Eve",Kerbol,
+             elements=[0,9832684544,
+                       0.00999999977648258,
+                       2.09999990463257,
+                       15,
+                       0,
+                       3.14000010490417],
+                   mu=8.1717302e12 ,
+                   radius=700000,
+                   SoI=85109365 )
+ 
+Moho = Planet("Moho",Kerbol,
+              elements=[0,5263138304,
+                       0.200000002980232,
+                       7,
+                       70,
+                       15,
+                       3.14000010490417],
+                   mu=245250000000 ,
+                   radius=250000,
+                   SoI=11206449)
+ 
 Eeloo = Planet("Eeloo",Kerbol,
                elements=[0,90118820000,
                        0.26,

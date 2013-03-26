@@ -20,13 +20,12 @@
 """
 import time
 import scipy.optimize as so
-from pylab import figure, fignum_exists, Circle, linspace, pi, mgrid, sin, cos, zeros, cross, norm, ma, isnan, arccos, norm, degrees
+from pylab import figure, fignum_exists, Circle, linspace, pi, mgrid, sin, cos, zeros, cross, norm, ma, isnan,arccos,degrees
 from celestial import Kerbin
 import toolkit
 from mpl_toolkits.mplot3d import Axes3D
 
-
-class Orbit2D(object):
+class Orbit2D:
     ''' Rendering window that displays 2D orbit on reference body '''
     def __init__(self,ref=Kerbin):
         self.ref = ref
@@ -35,7 +34,7 @@ class Orbit2D(object):
 
         self.axis = self.figure.gca(projection="rectilinear")#,aspect='equal')
         self.axis.set_aspect('equal')
-
+        #self.axis.set_autoscale_on(True) 
         self.objects = []
         self.update_after = self.figure.canvas.manager.window.after(1000, self.update)
         self.window = self.figure.canvas.manager.window # Reference to window, otherwise it's lost before close_event is called
@@ -60,8 +59,10 @@ class Orbit2D(object):
             self.figure.canvas.draw()
             return
         
-        if toolkit.db.UT:
+        if toolkit.db.UT and toolkit.db.UTt:
             t = time.time() - toolkit.db.UTt + toolkit.db.UT
+        elif toolkit.db.UT:
+            t = toolkit.db.UT
         else:
             t= time.time()
         #figure(self.figure.number)
@@ -113,6 +114,7 @@ class Orbit2D(object):
     def untrack(self,target):
         if target in self.objects:
             self.objects.remove(target)
+            self.axis.clear()
         
 class Orbit3D:
     ''' Displays orbits plot in 3d '''
@@ -150,8 +152,10 @@ class Orbit3D:
             self.notrack = True
             return
            
-        if toolkit.db.UT:
+        if toolkit.db.UT and toolkit.db.UTt:
             t = time.time() - toolkit.db.UTt + toolkit.db.UT
+        elif toolkit.db.UT:
+            t = toolkit.db.UT
         else:
             t= time.time()
         #figure(self.figure.number)
@@ -234,6 +238,7 @@ class Orbit3D:
     def untrack(self,target):
         if target in self.objects:
             del self.objects[target]
+            self.axis.clear()
         #if target in self.objects:
         #    self.objects.remove(target)
 class DistancePlot:
@@ -272,12 +277,38 @@ class DistancePlot:
             
             self.axis.scatter(encounter,b.SoI)
             self.axis.scatter(escape,b.SoI)
-
-
+            
+            
+            
+class TAPlot:
+    def __init__(self,celestialFrom,celestialTo,timeRange,multiplier=86400.0):
+        self.figure = figure(figsize=(8,8))
+        self.axis = self.figure.gca(projection="rectilinear")#,aspect='equal')
+        
+        X = []
+        Y = []        
+        
+        for t in timeRange:
+            t *= multiplier
+            
+            ephFrom = celestialFrom.eph(t)
+            ephTo= celestialTo.eph(t)
+            
+            pFrom = ephFrom[0] / norm(ephFrom[0])
+            pTo = ephTo[0] / norm(ephTo[0])
+            print pFrom
+            print pTo
+            print "ye",t
+            angle = degrees(arccos(pFrom.dot(pTo)))
+            
+            X.append(t/multiplier)
+            Y.append(angle)
+            
+        self.axis.plot(X,Y)
 
 
 class PorkchopPlot:
-    def __init__(self, departurePlanet, arrivalPlanet, departureTimes, arrivalTimes, multiplier=86400):
+    def __init__(self, departurePlanet, arrivalPlanet, departureTimes, arrivalTimes, multiplier=86400,ignoreV=False):
         ''' 
             Generates a porkchop plot
             
@@ -295,7 +326,8 @@ class PorkchopPlot:
         
         self.figure = figure()
         self.axis = self.figure.gca()
-        
+        mindv = 999999999999
+        mindate = None
         Z = zeros((len(arrivalTimes),len(departureTimes)))
         for depi,deptime in enumerate(departureTimes):
             depsecs = deptime * multiplier
@@ -303,6 +335,7 @@ class PorkchopPlot:
 
             for arri, arrtime in enumerate(arrivalTimes):
                 arrsecs = arrtime * multiplier
+                if arrsecs < depsecs: continue
                 ap,av = arrivalPlanet.eph(arrsecs)
                 
                 dt = arrsecs-depsecs
@@ -312,22 +345,20 @@ class PorkchopPlot:
                 # Solve lambert
                 lv1,lv2 = toolkit.lambert(dp,ap,dt,0,mu)
                 
-                c3 =  norm(lv1-dv) + norm(lv2-av)
-                if isnan(c3):
-                    phase = degrees(arccos(dp.dot(ap)/(norm(dp)*norm(ap))))
-                    print "NaN phase angle:",phase
-                    time.sleep(0.1)
+                if not ignoreV:
+                    c3 =  norm(lv1-dv) + norm(lv2-av)
+                else:
+                    c3 = norm(lv1) + norm(lv2)
+                print "c3",c3
+                if isnan(c3) or c3 > 20000:
                     c3 = 0
-                if c3 > 10000:
-                    c3 = 0
-                    
-                if c3 == 0:
-                    phase = degrees(arccos(dp.dot(ap)/(norm(dp)*norm(ap))))
-                    if phase > 160:
-                            
-                        print "NaN phase angle:",phase
-                        c3= 3000
-                        #time.sleep(0.1)
+                else:
+                    if c3 < mindv:
+                        mindv = c3
+                        mindate = [deptime,arrtime]
+                        mindvdv = lv1-dv
+                        mindvav = lv2-av
+                        
                 Z[arri][depi] = c3
                 print "v",Z[arri][depi] 
                 
@@ -339,3 +370,8 @@ class PorkchopPlot:
         self.axis.set_ylabel("Arrival day")
         self.axis.set_xlabel("Departure day")
         
+        print "mindv",mindv,"m/s on departure",mindate[0],"and arrive",mindate[1]
+        print "Departure dV",norm(mindvdv)
+        print "Arrival dV",norm(mindvav)
+        
+        self.dv = [lv1,lv2]
