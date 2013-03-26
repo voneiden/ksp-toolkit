@@ -101,19 +101,45 @@ def findNextTransferAngle(depart_ut,depart_planet,arrive_planet):
     return TA.x
     #pa = lambda x: from_planet.eph(x)[0]
     
-def getAngles(synodics,depart_planet,arrive_planet):
+def getAnglesBySynodics(synodics,depart_planet,arrive_planet):
+    ''' Find all departure dates that have 180 degree transfer angles
+    TODO: start searching from non-zero time
+    '''    
+    
+    synodics = int(synodics)
+    
+    # Get the synodic period
     synodic = depart_planet.orbit.synodicPeriod(arrive_planet.orbit)
     print "The synodic period is",synodic/60.0/60.0/24.0,"days"
     print "Fetching the next",synodics,"synodic periods.."
     print "Which is",synodic/60.0/60.0/24.0*synodics,"days worth of data (",synodic/60.0/60.0/24.0/365.0*synodics," years)"
+    
+    # Ask for enter so user can confirm that the query matches the requirements
     raw_input("Hit enter to proceed")
 
+    # Iterate over all the synodic periods and find a matching 180 degree transfer angle
     departures = []    
     for i in xrange(synodics):
         departures.append(findNextTransferAngle(synodic*i,depart_planet,arrive_planet))
         
     generate_datafile("phaseangle-"+depart_planet.name + "-" + arrive_planet.name + ".txt",departures,depart_planet,arrive_planet)
     return departures
+    
+    
+def getAnglesByYears(years,depart_planet,arrive_planet):
+    '''
+    Trigger Au, this is the function you're looking for!
+    '''
+    
+    # Get the synodic period
+    synodic = depart_planet.orbit.synodicPeriod(arrive_planet.orbit)
+    
+    # Get the amount of synodic periods during the years
+    synodics = (years*365*24*60*60) / synodic
+    
+    # And proceed
+    getAnglesBySynodics(synodics,depart_planet,arrive_planet)
+    
     
     
 def generate_datafile(name,departures,depart_planet,arrive_planet):
