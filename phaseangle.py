@@ -85,8 +85,8 @@ def findNextTransferAngle(depart_ut,depart_planet,arrive_planet):
     #raw_input("Wait for it")
     #TA = so.brentq(superfinder,depart_ut,depart_ut+synodic)
     #TA = so.brute(superfinder,[boundary])
-    print "We have a solution.."
-    print TA.x
+    #print "We have a solution.."
+    #print TA.x
     
     #deph_v = depart_planet.eph(TA.x)[0]
     #aeph_v = arrive_planet.eph(TA.x)[0]
@@ -115,12 +115,15 @@ def getAnglesBySynodics(synodics,depart_planet,arrive_planet):
     print "Which is",synodic/60.0/60.0/24.0*synodics,"days worth of data (",synodic/60.0/60.0/24.0/365.0*synodics," years)"
     
     # Ask for enter so user can confirm that the query matches the requirements
-    raw_input("Hit enter to proceed")
+    #raw_input("Hit enter to proceed")
+    time.sleep(1)
 
     # Iterate over all the synodic periods and find a matching 180 degree transfer angle
     departures = []    
     for i in xrange(synodics):
         departures.append(findNextTransferAngle(synodic*i,depart_planet,arrive_planet))
+        if i % 10 == 0:
+            print "Done",float(i)/synodics*100,"%"
         
     generate_datafile("phaseangle-"+depart_planet.name + "-" + arrive_planet.name + ".txt",departures,depart_planet,arrive_planet)
     return departures
@@ -163,3 +166,21 @@ def generate_datafile(name,departures,depart_planet,arrive_planet):
         f.write("%f\t%f\tYear %i, Day %i\n"%(departure,PA,years,days))
         
     f.close()
+    
+    
+'''
+Use this script to generate stuff for all planets
+
+import toolkit as tk
+import phaseangle as pa
+
+planets = [tk.Moho,tk.Eve,tk.Kerbin,tk.Duna,tk.Dres,tk.Jool,tk.Eeloo]
+years = 100
+
+for fplanet in planets:
+    for tplanet in planets:
+        if fplanet == tplanet: continue
+        print "Now doing planet",fplanet.name,"to",tplanet.name
+        pa.getAnglesByYears(years,fplanet,tplanet)
+        
+'''
