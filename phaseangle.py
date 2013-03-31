@@ -143,7 +143,65 @@ def getAnglesByYears(years,depart_planet,arrive_planet):
     # And proceed
     getAnglesBySynodics(synodics,depart_planet,arrive_planet)
     
+def getAngle(t,d,a):
+    ''' Just get the angle between two planets at time t '''
+    dep = d.eph(t)
+    arr = a.eph(t)
+    dep = dep[0]
+    arr = arr[0]
+    dep[2] = 0.0
+    arr[2] = 0.0
+    dep /= norm(dep)
+    arr /= norm(arr)
+    return degrees(arccos(dep.dot(arr)))
     
+
+def findAlignment(error,a,b,c):
+    ''' 
+    find planetary alignments :-)
+    error is maximum error in degrees
+    a is initial planet
+    b is second planet
+    c is a list of other planets
+    
+    choose planets with longest periods as a and b to gain the most efficiency
+    also c should be sorted with period length from longest to shortest I suppose
+    
+    Moho-Kerbin-Eve alignment: 14078521.6823 (Year 1, Day 163)
+    Moho-Kerbin-Eve-Duna alignment: 44956459758.5 (Year 1426.. KSP shows negative years)
+    Moho-Kerbin-Eve-Duna-Dres-Jool alignment: 2173607115160.0 (Year 68925)
+    '''
+    synodic = a.orbit.synodicPeriod(b.orbit)
+    i = 0
+    while True:
+        boundary = [i*synodic,(i+1)*synodic]
+        f = lambda x: getAngle(x,a,b)
+        t = so.minimize_scalar(f,method="bounded",bounds=boundary)
+        fa = f(t.x)
+        #print "Aligned at",t.x
+        #print "Angle",fa
+        if fa > error:
+            #print "Skipping main, error too large"
+            continue
+        else:
+            fail = False
+            for o in c:
+                angle = getAngle(t.x,a,o)
+                if angle > error:
+                    #print "Skipping %s-%s, error too large (%f)"%(a.name,o.name,angle)
+                    fail = True
+                    break
+            if fail:
+                i += 1
+                if i%100 == 0:
+                    print "Current year",t.x / 31536000
+                continue
+            else:
+                print "Planetary alignment found at t",t.x
+                break
+            
+                
+        
     
 def generate_datafile(name,departures,depart_planet,arrive_planet):
     f = open(name,'w')
