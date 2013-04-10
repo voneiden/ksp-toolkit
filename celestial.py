@@ -25,6 +25,7 @@ import scipy.optimize as so
 
 PI2 = pi*2
 
+
 class Celestial(object):
     def __init__(self,name,ref=None,**kwargs):
         print name,ref,kwargs
@@ -81,7 +82,10 @@ class Celestial(object):
             self.radius = kwargs["radius"] 
         if "SoI" in keys:
             self.SoI = kwargs["SoI"]
-
+        if "c" in keys:
+            self.c = kwargs["c"]
+        else:
+            self.c = "black"
         
         print("New Keplerian object created")
         print("- "+self.name)
@@ -569,7 +573,14 @@ class Orbit(object):
                 M %= PI2
              
              # Step 2a - Eccentric anomaly
-            E = so.newton(lambda x: x-self.e * sin(x) - M,M)
+            try:
+                E = so.newton(lambda x: x-self.e * sin(x) - M,M)
+            except RuntimeError: # Debugging a bug here, disregard
+                print "Eccentric anomaly failed for",self.obj.name
+                print "On epoch",epoch
+                print "Made error available at self.ERROR"
+                self.ERROR = [lambda x: x-self.e * sin(x) - M,M]
+                raise
             
             # Step 3a - True anomaly, method 1
             ta = 2 * arctan2(sqrt(1+self.e)*sin(E/2.0), sqrt(1-self.e)*cos(E/2.0))
@@ -776,25 +787,28 @@ class Ship(Celestial):
             Celestial.__init__(self,name,ref,**kwargs)
 
 #Define constants
-Kerbol = Sun("Kerbol",mu=1.1723328e18,radius=261600000)
+Kerbol = Sun("Kerbol",mu=1.1723328e18,radius=261600000,c="Yellow")
 
 Kerbin = Planet("Kerbin", Kerbol,
                 elements=[0,13599840256,0,0,0,0,3.14000010490417],
                 mu=3531600000000,
                 radius=600000,
-                SoI=84159286)
+                SoI=84159286,
+                c="Blue")
                 
 Mun = Moon("Mun",Kerbin,
            elements=[0,12000000,0,0,0,0,1.70000004768372], 
            mu=65138398000,
            radius=200000,
-           SoI=2429559.1)
+           SoI=2429559.1,
+           c="Khaki")
 
 Minmus = Moon("Minmus",Kerbin,
               elements=[0,47000000,0,6,78,38,0.899999976158142],
               mu=1765800000 ,
               radius=60000,
-              SoI=2247428.4 )               
+              SoI=2247428.4,
+              c="PaleGreen")               
                 
             
 
@@ -807,7 +821,8 @@ Duna = Planet("Duna",Kerbol,
                         3.14000010490417],
                mu=301363210000.0,
                radius=320000.0,
-               SoI=47921949.0)
+               SoI=47921949.0,
+               c="Orange")
  
  
  
@@ -820,7 +835,8 @@ Dres = Planet("Dres",Kerbol,
                         3.14000010490417],
                     mu=21484489000 ,
                     radius=138000,
-                    SoI=32832840)
+                    SoI=32832840,
+                    c="LightSteelBlue")
  
 Jool = Planet("Jool",Kerbol,
               elements=[0,68773560320,
@@ -831,7 +847,8 @@ Jool = Planet("Jool",Kerbol,
                         0.100000001490116],
                     mu=2.82528e14,
                     radius=6000000 ,
-                    SoI=2455985200 )
+                    SoI=2455985200,
+                    c="LawnGreen")
  
 Eve = Planet("Eve",Kerbol,
              elements=[0,9832684544,
@@ -842,7 +859,8 @@ Eve = Planet("Eve",Kerbol,
                        3.14000010490417],
                    mu=8.1717302e12 ,
                    radius=700000,
-                   SoI=85109365 )
+                   SoI=85109365,
+                   c="Purple")
  
 Moho = Planet("Moho",Kerbol,
               elements=[0,5263138304,
@@ -853,7 +871,8 @@ Moho = Planet("Moho",Kerbol,
                        3.14000010490417],
                    mu=245250000000 ,
                    radius=250000,
-                   SoI=11206449)
+                   SoI=11206449,
+                   c="RosyBrown")
  
 Eeloo = Planet("Eeloo",Kerbol,
                elements=[0,90118820000,
@@ -864,9 +883,11 @@ Eeloo = Planet("Eeloo",Kerbol,
                        3.14000010490417],
                    mu=74410815000.0,
                    radius=210000.0,
-                   SoI=119082940.0)
+                   SoI=119082940.0,
+                   c="SkyBlue")
                    
-Celestials = [Kerbol,Kerbin,Mun,Minmus,Duna,Eeloo]
+Celestials = [Kerbol,Moho,Eve,Kerbin,Mun,Minmus,Duna,Dres,Jool,Eeloo]
+Planets = [Moho,Eve,Kerbin,Duna,Dres,Jool,Eeloo]
 for celestial in Celestials:
     celestial.generatePaths()
     

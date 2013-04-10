@@ -50,6 +50,10 @@ class Orbit2D:
         #print "UPDATE"
         if not fignum_exists(self.figure.number):
             return
+        try:
+            self.window.after_cancel(self.update_after)
+        except:
+            pass
         self.update_after = self.figure.canvas.manager.window.after(1000, self.update)
         if len(self.objects) == 0:
             self.axis.clear()
@@ -115,6 +119,59 @@ class Orbit2D:
         if target in self.objects:
             self.objects.remove(target)
             self.axis.clear()
+
+class Orbit3D2D(Orbit2D):
+    ''' This class displays Orbits in 2D, but with proper rotations '''
+    def update(self):
+        #print "UPDATE"
+        if not fignum_exists(self.figure.number):
+            return
+        self.update_after = self.figure.canvas.manager.window.after(1000, self.update)
+        if len(self.objects) == 0:
+            self.axis.clear()
+            self.text = self.axis.text(0.5,0.5,"No objects tracked")
+            self.text.set_horizontalalignment("center")
+            self.text.set_verticalalignment("center")
+            self.figure.canvas.draw()
+            return
+        
+        if toolkit.db.UT and toolkit.db.UTt:
+            t = time.time() - toolkit.db.UTt + toolkit.db.UT
+        elif toolkit.db.UT:
+            t = toolkit.db.UT
+        else:
+            t= time.time()
+        #figure(self.figure.number)
+        self.axis.clear()
+        #planet = Circle((0,0),self.ref.radius,color=self.ref.c,edgecolor="black",linewidth=1.0)
+        #self.axis.add_artist(planet)        
+        
+        # Add a scatter for improved visibility if the artist is too tiny.
+        plotPos = self.axis.scatter(0,0,s=40,color=self.ref.c,edgecolor="black")
+        
+        
+        for celestial in self.objects:
+            if celestial.ref != self.ref or celestial.orbit == None:
+                continue
+            xpos = []
+            ypos = []
+            
+            for ta in self.linspace:
+                rv = celestial.orbit.plot(ta) 
+                xpos.append(rv[0])
+                ypos.append(rv[1])
+                
+            
+            plotOrbit = self.axis.plot(xpos,ypos,color=celestial.c)
+            rv,vv = celestial.eph(t)
+            self.scat = (rv,vv)
+            plotPos = self.axis.scatter(rv[0],rv[1],color=celestial.c,edgecolor="black")
+
+        self.axis.relim()
+        self.axis.autoscale_view(True,True,True)
+        self.figure.canvas.draw()
+
+        
         
 class Orbit3D:
     ''' Displays orbits plot in 3d '''
