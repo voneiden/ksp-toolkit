@@ -6,7 +6,7 @@ Created on Thu Apr 04 21:46:19 2013
 """
 
 ''' A second attempt in creating phase angle solver '''
-from pylab import degrees, norm, cross, arccos, pi, sqrt, linspace, floor, sin, radians,cos, isnan
+from pylab import degrees, norm, cross, arccos, pi, sqrt, linspace, floor, sin, radians,cos, isnan, sign
 import matplotlib.pyplot as plt
 import numpy, time
 
@@ -536,7 +536,7 @@ def generate_datafile(name,departures,depart_planet,arrive_planet,errors=0):
         e2 = arrive_planet.eph(departure)[0]
         e1 /= norm(e1)
         e2 /= norm(e2)
-        PA = degrees(arccos(e1.dot(e2)))
+        PA = degrees(arccos(e1.dot(e2))) * sign(cross(e1,e2)[2])
         
         years = floor(departure/60.0/60.0/24.0/365.0)+1
         days = floor((departure/60.0/60.0/24.0)%365.0)+1
